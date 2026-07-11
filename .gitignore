@@ -1,0 +1,23 @@
+# Rust / Soroban
+contracts/target/
+**/*.rs.bk
+.soroban/
+.stellar/
+
+# Node / web
+node_modules/
+web/dist/
+web/.vite/
+*.local
+
+# Secrets and identities: never commit keys or seed phrases
+.env
+.env.*
+*.secret
+*.keystore
+*.jks
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
