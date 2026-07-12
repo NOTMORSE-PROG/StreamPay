@@ -36,7 +36,11 @@ export function EmployerDashboard() {
             employer={status.address}
             onCreated={() => setRefreshKey((key) => key + 1)}
           />
-          <StreamList employer={status.address} refreshKey={refreshKey} />
+          <StreamList
+            employer={status.address}
+            refreshKey={refreshKey}
+            onChanged={() => setRefreshKey((key) => key + 1)}
+          />
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">

@@ -15,14 +15,18 @@ import {
   explorerAccountUrl,
   explorerContractUrl,
 } from "../lib/config";
+import { CancelDialog } from "./CancelDialog";
 
 // The employer's overview: every stream they created, each with a live accrued
-// figure, a lifecycle badge, an editable nickname, and the shareable worker link.
-// Reads are free simulations polled on a polite cadence (useEmployerStreams).
+// figure, a lifecycle badge, an editable nickname, the shareable worker link, and
+// a Cancel action with the fair-split confirmation (T-015). Reads are free
+// simulations polled on a polite cadence (useEmployerStreams).
 
 interface StreamListProps {
   employer: string;
   refreshKey: number;
+  /** Force a full re-read after a stream's state changes (a cancel). */
+  onChanged: () => void;
 }
 
 const BADGE_CLASS: Record<LifecycleState, string> = {
@@ -32,7 +36,11 @@ const BADGE_CLASS: Record<LifecycleState, string> = {
   cancelled: "bg-amber-50 text-amber-700",
 };
 
-export function StreamList({ employer, refreshKey }: StreamListProps) {
+export function StreamList({
+  employer,
+  refreshKey,
+  onChanged,
+}: StreamListProps) {
   const { rows, loading, error } = useEmployerStreams(employer, refreshKey);
   const summary = summarize(rows);
 
@@ -64,7 +72,12 @@ export function StreamList({ employer, refreshKey }: StreamListProps) {
       ) : (
         <ul className="space-y-3">
           {rows.map((row) => (
-            <StreamCard key={row.stream.id.toString()} row={row} />
+            <StreamCard
+              key={row.stream.id.toString()}
+              row={row}
+              employer={employer}
+              onChanged={onChanged}
+            />
           ))}
         </ul>
       )}
@@ -72,10 +85,23 @@ export function StreamList({ employer, refreshKey }: StreamListProps) {
   );
 }
 
-function StreamCard({ row }: { row: StreamRow }) {
+function StreamCard({
+  row,
+  employer,
+  onChanged,
+}: {
+  row: StreamRow;
+  employer: string;
+  onChanged: () => void;
+}) {
   const { stream, accrued, state } = row;
   const percent = progressPercent(stream, accrued);
   const workerLink = `${window.location.origin}/worker/${stream.id.toString()}`;
+  const [cancelOpen, setCancelOpen] = useState(false);
+  // Cancel is meaningful only while the stream can still move money: active
+  // (splits earned vs remainder) or completed (pays the worker the remainder).
+  // Drained and cancelled are terminal, so no button (the client-side block).
+  const cancellable = state === "active" || state === "completed";
 
   return (
     <li className="rounded-2xl border border-slate-200 bg-white p-5">
@@ -135,7 +161,7 @@ function StreamCard({ row }: { row: StreamRow }) {
         </p>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-3 text-sm">
+      <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
         <CopyLinkButton link={workerLink} />
         <a
           href={explorerContractUrl(CONTRACT_ID)}
@@ -145,7 +171,26 @@ function StreamCard({ row }: { row: StreamRow }) {
         >
           Contract on explorer
         </a>
+        {cancellable && (
+          <button
+            type="button"
+            onClick={() => setCancelOpen(true)}
+            className="ml-auto font-medium text-amber-700 hover:text-amber-800"
+          >
+            Cancel stream
+          </button>
+        )}
       </div>
+
+      {cancelOpen && (
+        <CancelDialog
+          stream={stream}
+          accrued={accrued}
+          employer={employer}
+          onCancelled={onChanged}
+          onClose={() => setCancelOpen(false)}
+        />
+      )}
     </li>
   );
 }

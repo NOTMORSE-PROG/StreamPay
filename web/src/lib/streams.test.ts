@@ -2,12 +2,47 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { Stream } from "./contract";
 import {
   deriveLifecycleState,
+  fairSplit,
   getNickname,
   progressPercent,
   setNickname,
   summarize,
   type StreamRow,
 } from "./streams";
+
+describe("fairSplit (cancel split)", () => {
+  it("splits earned to the worker and the remainder to the employer", () => {
+    expect(fairSplit(100n, 30n)).toEqual({
+      workerAmount: 30n,
+      employerRefund: 70n,
+    });
+  });
+
+  it("always sums to the deposit", () => {
+    for (const earned of [0n, 1n, 49n, 50n, 99n, 100n]) {
+      const split = fairSplit(100n, earned);
+      expect(split.workerAmount + split.employerRefund).toBe(100n);
+    }
+  });
+
+  it("caps earned at the deposit (fully vested cancel refunds nothing)", () => {
+    expect(fairSplit(100n, 100n)).toEqual({
+      workerAmount: 100n,
+      employerRefund: 0n,
+    });
+    expect(fairSplit(100n, 150n)).toEqual({
+      workerAmount: 100n,
+      employerRefund: 0n,
+    });
+  });
+
+  it("clamps a negative earned to zero (full refund at t=0)", () => {
+    expect(fairSplit(100n, -5n)).toEqual({
+      workerAmount: 0n,
+      employerRefund: 100n,
+    });
+  });
+});
 
 function makeStream(overrides: Partial<Stream> = {}): Stream {
   return {

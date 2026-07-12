@@ -272,6 +272,94 @@ export async function createStream(
   };
 }
 
+/** The cancel inputs; `signXdr` is injected so Freighter stays in wallet.ts. */
+export interface CancelRequest {
+  employer: string;
+  streamId: bigint;
+  signXdr: (unsignedXdr: string) => string | Promise<string>;
+}
+
+/**
+ * Cancel a stream (employer-only): build cancel(id) with the EMPLOYER account as
+ * the transaction source (its signature satisfies require_auth(employer)),
+ * prepare, sign via Freighter, submit, and poll to confirmation. The contract
+ * splits the pot atomically (earned to worker, remainder refunded); the caller
+ * reads the executed split back from post-cancel state. Returns the transaction
+ * hash for the explorer receipt. Throws ChainError on a simulation failure (for
+ * example a double-cancel race) before signing, SubmitError on an on-chain fail.
+ */
+export async function cancelStream(request: CancelRequest): Promise<string> {
+  const server = getServer();
+  const account = await server.getAccount(request.employer);
+  const contract = new Contract(CONTRACT_ID);
+  const tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(contract.call("cancel", u64Arg(request.streamId)))
+    .setTimeout(180)
+    .build();
+
+  const prepared = await server.prepareTransaction(tx);
+  const signedXdr = await request.signXdr(prepared.toXDR());
+  const signedTx = TransactionBuilder.fromXDR(signedXdr, NETWORK_PASSPHRASE);
+
+  const sent = await server.sendTransaction(signedTx);
+  if (sent.status === "ERROR") {
+    throw new SubmitError("the network rejected the cancellation");
+  }
+  await pollTransaction(sent.hash);
+  return sent.hash;
+}
+
+/** The withdraw inputs; `signXdr` is injected so the demo wallet stays in
+ *  demoWallet.ts (the worker's signing boundary, parallel to Freighter). */
+export interface WithdrawRequest {
+  worker: string;
+  streamId: bigint;
+  amount: bigint;
+  signXdr: (unsignedXdr: string) => string | Promise<string>;
+}
+
+/**
+ * Withdraw `amount` stroops of earned wages to the worker: build withdraw(id,
+ * amount) with the WORKER account as the transaction source (so the tx signature
+ * itself satisfies the contract's require_auth(worker), exactly as the CLI drill
+ * proved in T-008), prepare (simulate + fees), sign via the injected demo wallet,
+ * submit, and poll to confirmation. Returns the transaction hash for the explorer
+ * receipt. A simulation failure (for example the amount racing above available)
+ * throws ChainError before signing; an on-chain failure throws SubmitError.
+ */
+export async function withdraw(request: WithdrawRequest): Promise<string> {
+  const server = getServer();
+  const account = await server.getAccount(request.worker);
+  const contract = new Contract(CONTRACT_ID);
+  const tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(
+      contract.call(
+        "withdraw",
+        u64Arg(request.streamId),
+        i128Arg(request.amount),
+      ),
+    )
+    .setTimeout(180)
+    .build();
+
+  const prepared = await server.prepareTransaction(tx);
+  const signedXdr = await request.signXdr(prepared.toXDR());
+  const signedTx = TransactionBuilder.fromXDR(signedXdr, NETWORK_PASSPHRASE);
+
+  const sent = await server.sendTransaction(signedTx);
+  if (sent.status === "ERROR") {
+    throw new SubmitError("the network rejected the withdrawal");
+  }
+  await pollTransaction(sent.hash);
+  return sent.hash;
+}
+
 /**
  * Poll a submitted transaction until it leaves NOT_FOUND. NOT_FOUND means still
  * pending (never a failure), so a slow confirmation is never misreported; only an

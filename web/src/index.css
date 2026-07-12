@@ -1,1 +1,8 @@
 @import "tailwindcss";
+
+/* Crisper text for the demo (the video may film a real phone): antialiased
+   glyphs improve legibility and contrast on the money screens (T-016). */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

@@ -41,6 +41,26 @@ export function progressPercent(stream: Stream, accrued: bigint): number {
   return Number((capped * 100n) / stream.deposit);
 }
 
+export interface FairSplit {
+  /** Everything the worker earned to date (kept by the worker at cancel). */
+  workerAmount: bigint;
+  /** The remainder of the deposit refunded to the employer. */
+  employerRefund: bigint;
+}
+
+/**
+ * The two legs of a cancel (contract lib.rs::cancel): the worker keeps everything
+ * earned, the employer is refunded the rest, and the two always sum to the
+ * deposit. `earned` is clamped to [0, deposit] so the split is well-formed for any
+ * input. Used for BOTH the pre-cancel estimate (earned = current accrued, labeled
+ * "as of now") and the executed figures read back from post-cancel state (earned =
+ * the frozen withdrawn), which is on-chain truth, not a local recomputation.
+ */
+export function fairSplit(deposit: bigint, earned: bigint): FairSplit {
+  const capped = earned < 0n ? 0n : earned > deposit ? deposit : earned;
+  return { workerAmount: capped, employerRefund: deposit - capped };
+}
+
 export interface StreamsSummary {
   activeCount: number;
   totalStreaming: bigint;

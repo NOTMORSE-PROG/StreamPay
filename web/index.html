@@ -3,8 +3,33 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
     <title>StreamPay (Testnet)</title>
+    <meta
+      name="description"
+      content="Watch your salary stream in per second and withdraw anytime, on Stellar testnet."
+    />
+
+    <!-- PWA install experience (T-028): installable manifest, no service worker,
+         no offline claims (a stale cached money screen would be dishonest). -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0d9488" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- iOS Safari honours its own tags and ignores parts of the manifest; the
+         demo phone is Android, iOS is best-effort (T-028 edge case). The
+         apple-* capable tag is kept for older iOS alongside the standard one. -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="StreamPay" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
   </head>
   <body>
     <div id="root"></div>
