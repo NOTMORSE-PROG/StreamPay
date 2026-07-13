@@ -1,16 +1,30 @@
 # StreamPay
 
-**Salary that streams, not salary that waits.** StreamPay pays workers per second on
-Stellar: an employer deposits a pay period into a Soroban smart contract and sets a
-rate; wages accrue to the worker every second; the worker withdraws any earned amount
-at any time (about 5 seconds, near zero fee); cancelling a stream splits the pot fairly
-and automatically (everything earned to the worker, the remainder refunded to the
-employer).
+**Salary that streams, not salary that waits.** An employer sets aside one pay period
+and a worker gets paid automatically, second by second, watching the balance grow in
+real time and cashing out anytime in about 5 seconds for a tiny fee. Stopping early
+splits the money fairly and automatically: everything earned goes to the worker, the
+remainder returns to the employer. Neither side needs to know anything about crypto to
+use it.
+
+Under the hood it runs on Stellar: the employer deposits into a Soroban smart contract
+that streams the funds per second and enforces the fair split, with every payment
+verifiable on the public ledger.
 
 Built for the APAC Stellar Hackathon (Payment and Consumer Applications track).
 
 > **Testnet only.** This runs entirely on the Stellar **test** network with friendbot
 > funds. No mainnet, no real money.
+
+## Screenshots
+
+| Landing | Employer sign-in |
+| --- | --- |
+| ![StreamPay landing page: get paid every second you work](docs/landing.png) | ![Employer sign-in with a wallet app](docs/employer-desktop.png) |
+
+| Worker home | Worker paycheck, live from testnet |
+| --- | --- |
+| ![Worker home screen showing earnings](docs/worker-home.png) | ![Worker paycheck detail with a real testnet balance](docs/worker-stream.png) |
 
 ## What is real, and what is simplified
 
