@@ -20,9 +20,13 @@ Built for the APAC Stellar Hackathon (Payment and Consumer Applications track).
 
 ## Screenshots
 
-| Landing | Employer sign-in |
+| Landing | Employer dashboard, live from testnet |
 | --- | --- |
-| ![StreamPay landing page: get paid every second you work](docs/landing.png) | ![Employer sign-in with a wallet app](docs/employer-desktop.png) |
+| ![StreamPay landing page: get paid every second you work](docs/landing.png) | ![Employer dashboard showing a completed and a cancelled stream, real testnet data](docs/employer-dashboard.png) |
+
+| Create a stream | Employer settings |
+| --- | --- |
+| ![Create-stream form: worker account number, amount, and duration](docs/employer-create-stream.png) | ![Employer settings: business name, saved workers, and network info](docs/employer-settings.png) |
 
 | Worker home | Worker paycheck, live from testnet |
 | --- | --- |
