@@ -16,6 +16,8 @@ Built for the APAC Stellar Hackathon (Payment and Consumer Applications track).
 > **Testnet only.** This runs entirely on the Stellar **test** network with friendbot
 > funds. No mainnet, no real money.
 
+**Try it live:** [streampay-stellar.vercel.app](https://streampay-stellar.vercel.app)
+
 ## Screenshots
 
 | Landing | Employer sign-in |
