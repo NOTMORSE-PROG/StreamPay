@@ -4,6 +4,8 @@ import {
   deriveLifecycleState,
   fairSplit,
   getNickname,
+  matchesSearch,
+  matchesStatusFilter,
   progressPercent,
   setNickname,
   summarize,
@@ -107,11 +109,17 @@ describe("summarize", () => {
     expect(summarize(rows)).toEqual({
       activeCount: 2,
       totalStreaming: 120_000_000n,
+      // Every deposit, active or not: 100M + 5M + 20M.
+      totalDeposited: 125_000_000n,
     });
   });
 
   it("is zero for an empty list", () => {
-    expect(summarize([])).toEqual({ activeCount: 0, totalStreaming: 0n });
+    expect(summarize([])).toEqual({
+      activeCount: 0,
+      totalStreaming: 0n,
+      totalDeposited: 0n,
+    });
   });
 });
 
@@ -126,5 +134,45 @@ describe("nickname storage", () => {
     expect(getNickname(7n)).toBe("Maria Santos");
     setNickname(7n, "   ");
     expect(getNickname(7n)).toBeNull();
+  });
+});
+
+describe("matchesStatusFilter", () => {
+  it("passes everything for the all filter", () => {
+    expect(matchesStatusFilter("cancelled", "all")).toBe(true);
+    expect(matchesStatusFilter("active", "all")).toBe(true);
+  });
+
+  it("groups drained under completed", () => {
+    expect(matchesStatusFilter("completed", "completed")).toBe(true);
+    expect(matchesStatusFilter("drained", "completed")).toBe(true);
+    expect(matchesStatusFilter("active", "completed")).toBe(false);
+  });
+
+  it("matches active and cancelled exactly", () => {
+    expect(matchesStatusFilter("active", "active")).toBe(true);
+    expect(matchesStatusFilter("cancelled", "cancelled")).toBe(true);
+    expect(matchesStatusFilter("active", "cancelled")).toBe(false);
+  });
+});
+
+describe("matchesSearch", () => {
+  const row: StreamRow = {
+    stream: makeStream({ id: 42n }),
+    accrued: 0n,
+    state: "active",
+  };
+
+  it("matches everything on an empty query", () => {
+    expect(matchesSearch(row, "", null)).toBe(true);
+    expect(matchesSearch(row, "   ", null)).toBe(true);
+  });
+
+  it("matches the stream id, nickname, and address, case-insensitively", () => {
+    expect(matchesSearch(row, "42", null)).toBe(true);
+    expect(matchesSearch(row, "#42", null)).toBe(true);
+    expect(matchesSearch(row, "maria", "Maria Santos")).toBe(true);
+    expect(matchesSearch(row, row.stream.worker.slice(0, 6), null)).toBe(true);
+    expect(matchesSearch(row, "nobody", "Maria")).toBe(false);
   });
 });

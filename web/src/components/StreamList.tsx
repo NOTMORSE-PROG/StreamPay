@@ -1,14 +1,7 @@
 import { useState } from "react";
-import { useEmployerStreams } from "../hooks/useEmployerStreams";
-import {
-  getNickname,
-  lifecycleLabel,
-  progressPercent,
-  setNickname,
-  summarize,
-  type LifecycleState,
-  type StreamRow,
-} from "../lib/streams";
+import { Link } from "react-router-dom";
+import { getNickname, progressPercent, setNickname } from "../lib/streams";
+import type { StreamRow } from "../lib/streams";
 import { formatDuration, stroopsToXlm, truncateAddress } from "../lib/format";
 import {
   CONTRACT_ID,
@@ -16,43 +9,36 @@ import {
   explorerContractUrl,
 } from "../lib/config";
 import { CancelDialog } from "./CancelDialog";
+import { Card } from "./ui/Card";
+import { StatusBadge } from "./ui/StatusBadge";
 
 // The employer's overview: every stream they created, each with a live accrued
 // figure, a lifecycle badge, an editable nickname, the shareable worker link, and
-// a Cancel action with the fair-split confirmation (T-015). Reads are free
-// simulations polled on a polite cadence (useEmployerStreams).
+// a Cancel action with the fair-split confirmation (T-015). The rows are loaded
+// and polled by the parent dashboard (useEmployerStreams) and passed in, so the
+// dashboard can also compute its summary stat row from the same data.
 
 interface StreamListProps {
   employer: string;
-  refreshKey: number;
+  rows: StreamRow[];
+  loading: boolean;
+  error: string | null;
   /** Force a full re-read after a stream's state changes (a cancel). */
   onChanged: () => void;
 }
 
-const BADGE_CLASS: Record<LifecycleState, string> = {
-  active: "bg-teal-50 text-teal-700",
-  completed: "bg-blue-50 text-blue-700",
-  drained: "bg-slate-100 text-slate-600",
-  cancelled: "bg-amber-50 text-amber-700",
-};
-
 export function StreamList({
   employer,
-  refreshKey,
+  rows,
+  loading,
+  error,
   onChanged,
 }: StreamListProps) {
-  const { rows, loading, error } = useEmployerStreams(employer, refreshKey);
-  const summary = summarize(rows);
-
   return (
     <section className="space-y-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-lg font-semibold text-slate-900">Your streams</h2>
-        <p className="text-sm text-slate-500 tabular-nums">
-          {summary.activeCount} active ·{" "}
-          {stroopsToXlm(summary.totalStreaming, { group: true })} XLM streaming
-        </p>
-      </div>
+      <h2 className="text-lg font-semibold text-slate-900">
+        Workers you are paying
+      </h2>
 
       {error !== null && (
         <p className="rounded-lg bg-amber-50 px-4 py-2 text-sm text-amber-700">
@@ -61,14 +47,13 @@ export function StreamList({
       )}
 
       {loading && rows.length === 0 ? (
-        <p className="text-sm text-slate-500">Loading streams...</p>
+        <p className="text-sm text-slate-500">Loading...</p>
       ) : rows.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
+        <Card dashed className="p-8 text-center">
           <p className="text-sm text-slate-500">
-            No streams yet. Create one above to start paying a worker per
-            second.
+            No one yet. Use Create stream to start paying a worker per second.
           </p>
-        </div>
+        </Card>
       ) : (
         <ul className="space-y-3">
           {rows.map((row) => (
@@ -102,16 +87,18 @@ function StreamCard({
   // (splits earned vs remainder) or completed (pays the worker the remainder).
   // Drained and cancelled are terminal, so no button (the client-side block).
   const cancellable = state === "active" || state === "completed";
+  // Ended streams can be renewed: prefill the create form for the next pay period.
+  const ended = state === "drained" || state === "cancelled";
+  const renewLink =
+    `/employer/create?worker=${encodeURIComponent(stream.worker)}` +
+    `&amount=${stroopsToXlm(stream.deposit)}` +
+    `&durationSeconds=${stream.duration.toString()}`;
 
   return (
     <li className="rounded-2xl border border-slate-200 bg-white p-5">
       <div className="flex items-start justify-between gap-3">
         <NicknameField streamId={stream.id} />
-        <span
-          className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${BADGE_CLASS[state]}`}
-        >
-          {lifecycleLabel(state)}
-        </span>
+        <StatusBadge state={state} />
       </div>
 
       <dl className="mt-4 grid grid-cols-2 gap-4 text-sm">
@@ -130,7 +117,7 @@ function StreamCard({
           </dd>
         </div>
         <div>
-          <dt className="text-slate-500">Deposit</dt>
+          <dt className="text-slate-500">Set aside</dt>
           <dd className="mt-0.5 tabular-nums text-slate-900">
             {stroopsToXlm(stream.deposit, { group: true })} XLM
           </dd>
@@ -142,7 +129,7 @@ function StreamCard({
           </dd>
         </div>
         <div>
-          <dt className="text-slate-500">Accrued</dt>
+          <dt className="text-slate-500">Earned so far</dt>
           <dd className="mt-0.5 font-semibold tabular-nums text-slate-900">
             {stroopsToXlm(accrued, { group: true })} XLM
           </dd>
@@ -157,7 +144,7 @@ function StreamCard({
           />
         </div>
         <p className="mt-1 text-xs text-slate-500 tabular-nums">
-          {percent}% vested
+          {percent}% paid out
         </p>
       </div>
 
@@ -169,7 +156,7 @@ function StreamCard({
           rel="noreferrer"
           className="font-medium text-slate-600 hover:text-teal-700"
         >
-          Contract on explorer
+          Public receipt
         </a>
         {cancellable && (
           <button
@@ -177,8 +164,16 @@ function StreamCard({
             onClick={() => setCancelOpen(true)}
             className="ml-auto font-medium text-amber-700 hover:text-amber-800"
           >
-            Cancel stream
+            Stop paying
           </button>
+        )}
+        {ended && (
+          <Link
+            to={renewLink}
+            className="ml-auto font-medium text-teal-700 hover:text-teal-800"
+          >
+            Start next period
+          </Link>
         )}
       </div>
 

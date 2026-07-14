@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   addReceipt,
+  getAllReceipts,
   getReceipts,
   resolveWithdrawAmount,
   type Receipt,
@@ -94,5 +95,41 @@ describe("receipt trail", () => {
     const list = getReceipts(6n);
     expect(list).toHaveLength(1);
     expect(list[0].hash).toBe("ok");
+  });
+});
+
+describe("getAllReceipts (across streams, newest first)", () => {
+  beforeEach(() => localStorage.clear());
+  afterEach(() => localStorage.clear());
+
+  const receipt = (hash: string, atMs: number): Receipt => ({
+    amountStroops: "25000000",
+    hash,
+    atMs,
+  });
+
+  it("returns [] when there are no receipts", () => {
+    expect(getAllReceipts()).toEqual([]);
+  });
+
+  it("merges receipts from every stream, newest first", () => {
+    addReceipt(6n, receipt("old", 1000));
+    addReceipt(7n, receipt("newest", 3000));
+    addReceipt(6n, receipt("middle", 2000));
+    const all = getAllReceipts();
+    expect(all.map((r) => r.receipt.hash)).toEqual(["newest", "middle", "old"]);
+    // Each row carries the stream it came from.
+    expect(all[0].streamId).toBe(7n);
+    expect(all[1].streamId).toBe(6n);
+  });
+
+  it("ignores unrelated and corrupt keys", () => {
+    addReceipt(6n, receipt("ok", 1000));
+    localStorage.setItem("streampay:nick:6", "Cafe shift");
+    localStorage.setItem("streampay:receipts:notanumber", "[]");
+    localStorage.setItem("streampay:receipts:8", "{corrupt");
+    const all = getAllReceipts();
+    expect(all).toHaveLength(1);
+    expect(all[0].receipt.hash).toBe("ok");
   });
 });

@@ -259,12 +259,12 @@ export async function createStream(
 
   const sent = await server.sendTransaction(signedTx);
   if (sent.status === "ERROR") {
-    throw new SubmitError("the network rejected the transaction");
+    throw new SubmitError("that did not go through");
   }
   const confirmed = await pollTransaction(sent.hash);
   const returnValue = confirmed.returnValue;
   if (returnValue === undefined) {
-    throw new SubmitError("no stream id returned from create_stream");
+    throw new SubmitError("no paycheck number was returned");
   }
   return {
     streamId: BigInt(scValToNative(returnValue) as bigint),
@@ -306,7 +306,7 @@ export async function cancelStream(request: CancelRequest): Promise<string> {
 
   const sent = await server.sendTransaction(signedTx);
   if (sent.status === "ERROR") {
-    throw new SubmitError("the network rejected the cancellation");
+    throw new SubmitError("that stop request did not go through");
   }
   await pollTransaction(sent.hash);
   return sent.hash;
@@ -354,7 +354,7 @@ export async function withdraw(request: WithdrawRequest): Promise<string> {
 
   const sent = await server.sendTransaction(signedTx);
   if (sent.status === "ERROR") {
-    throw new SubmitError("the network rejected the withdrawal");
+    throw new SubmitError("that cash-out did not go through");
   }
   await pollTransaction(sent.hash);
   return sent.hash;
@@ -376,11 +376,11 @@ async function pollTransaction(
       return response;
     }
     if (response.status === rpc.Api.GetTransactionStatus.FAILED) {
-      throw new SubmitError("the transaction failed on-chain");
+      throw new SubmitError("that did not go through");
     }
     if (Date.now() > deadline) {
       throw new SubmitError(
-        "timed out waiting for confirmation; check the explorer before retrying",
+        "took too long to confirm; check the public receipt before retrying",
       );
     }
     await sleep(1000);

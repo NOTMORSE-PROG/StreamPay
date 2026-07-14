@@ -33,6 +33,15 @@ export const EXPLORER_BASE = "https://stellar.expert/explorer/testnet";
 // exactly once (I-5; see format.ts), never as a float round-trip.
 export const TOKEN_DECIMALS = 7;
 
+// Indicative demo conversion rates for the worker's local-currency DISPLAY only
+// (currency.ts). These are illustrative, labeled "demo rate" everywhere they show,
+// and NEVER feed a transaction: all real money math stays in stroops. Values are a
+// rough snapshot on 2026-07-12 and are deliberately not fetched live (an external
+// price feed at demo time would be a new failure mode). One test-XLM stands in for
+// the streamed token; production would stream USDC (about one US dollar).
+export const DEMO_RATE_XLM_TO_USD = 0.11;
+export const DEMO_RATE_USD_TO_PHP = 58;
+
 /** Explorer URL for a transaction hash. */
 export function explorerTxUrl(hash: string): string {
   return `${EXPLORER_BASE}/tx/${hash}`;
@@ -48,10 +57,14 @@ export function explorerAccountUrl(address: string): string {
   return `${EXPLORER_BASE}/account/${address}`;
 }
 
+// Friendbot base URL; also feeds the CSP connect-src (csp.ts), so funding and
+// the policy can never disagree about the host.
+export const FRIENDBOT_BASE = "https://friendbot.stellar.org";
+
 /**
  * Friendbot funding link for a testnet account (decision 13's one-click funding
  * hint). Testnet only, and labeled as such wherever it appears.
  */
 export function friendbotUrl(address: string): string {
-  return `https://friendbot.stellar.org/?addr=${address}`;
+  return `${FRIENDBOT_BASE}/?addr=${address}`;
 }

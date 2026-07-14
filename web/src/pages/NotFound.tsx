@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { ButtonLink } from "../components/ui/Button";
 
 export function NotFound() {
   return (
@@ -7,12 +7,12 @@ export function NotFound() {
       <p className="text-sm text-slate-600">
         That link does not point anywhere in StreamPay.
       </p>
-      <Link
-        to="/"
-        className="inline-flex items-center justify-center rounded-lg bg-teal-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-700"
-      >
-        Back to dashboard
-      </Link>
+      <div className="flex flex-wrap justify-center gap-3">
+        <ButtonLink to="/employer">For employers</ButtonLink>
+        <ButtonLink to="/worker" variant="secondary">
+          For workers
+        </ButtonLink>
+      </div>
     </div>
   );
 }

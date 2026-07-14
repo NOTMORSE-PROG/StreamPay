@@ -49,7 +49,7 @@ describe("CancelDialog", () => {
         onClose={() => {}}
       />,
     );
-    expect(screen.getByText("Cancel this stream?")).toBeInTheDocument();
+    expect(screen.getByText("Stop paying this worker?")).toBeInTheDocument();
     // Worker keeps 9, employer refunded 21.
     expect(screen.getByText("9 XLM")).toBeInTheDocument();
     expect(screen.getByText("21 XLM")).toBeInTheDocument();
@@ -73,15 +73,15 @@ describe("CancelDialog", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Cancel stream" }));
+    fireEvent.click(screen.getByRole("button", { name: "Stop paying" }));
 
     await waitFor(() =>
-      expect(screen.getByText("Stream cancelled")).toBeInTheDocument(),
+      expect(screen.getByText("Payments stopped")).toBeInTheDocument(),
     );
     // Executed: worker kept 10 XLM, refunded 20 XLM (from post-cancel state).
     expect(screen.getByText("10 XLM")).toBeInTheDocument();
     expect(screen.getByText("20 XLM")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /explorer/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /receipt/i })).toHaveAttribute(
       "href",
       expect.stringContaining("txhash123"),
     );
@@ -102,13 +102,13 @@ describe("CancelDialog", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Cancel stream" }));
+    fireEvent.click(screen.getByRole("button", { name: "Stop paying" }));
 
     await waitFor(() =>
-      expect(screen.getByText(/signature declined/i)).toBeInTheDocument(),
+      expect(screen.getByText(/approval declined/i)).toBeInTheDocument(),
     );
     // Still on the confirm screen (dismissible), and no post-cancel read ran.
-    expect(screen.getByText("Cancel this stream?")).toBeInTheDocument();
+    expect(screen.getByText("Stop paying this worker?")).toBeInTheDocument();
     expect(getStreamMock).not.toHaveBeenCalled();
   });
 });

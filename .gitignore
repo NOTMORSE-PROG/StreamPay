@@ -3,6 +3,7 @@ contracts/target/
 **/*.rs.bk
 .soroban/
 .stellar/
+contracts/streampay/test_snapshots/test_properties/
 
 # Node / web
 node_modules/

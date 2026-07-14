@@ -11,6 +11,8 @@ import {
 } from "../lib/withdraw";
 import { stroopsToXlm } from "../lib/format";
 import { explorerTxUrl } from "../lib/config";
+import { Dialog } from "./ui/Dialog";
+import { Button } from "./ui/Button";
 
 // The money shot (build plan 0:40): one tap moves earned wages to the worker in
 // about 5 seconds, then a receipt with a public explorer link. The withdraw
@@ -42,6 +44,7 @@ export function WithdrawPanel({
   const [amountInput, setAmountInput] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [confirmAmount, setConfirmAmount] = useState<bigint | null>(null);
   const [receipts, setReceipts] = useState<Receipt[]>(() =>
     getReceipts(stream.id),
   );
@@ -51,32 +54,39 @@ export function WithdrawPanel({
   const canWithdraw =
     isOwner && !cancelled && available > 0n && phase === "idle";
 
-  const submit = async (): Promise<void> => {
-    if (wallet === null) {
-      return;
-    }
+  // First tap: resolve and validate the amount, then open the confirm modal. The
+  // signature only happens after the worker confirms in the modal.
+  const requestWithdraw = (): void => {
     const resolved = resolveWithdrawAmount(amountInput, available);
     if (resolved.amount === null) {
       setError(resolved.error);
       return;
     }
     setError(null);
+    setConfirmAmount(resolved.amount);
+  };
+
+  const submit = async (amount: bigint): Promise<void> => {
+    if (wallet === null) {
+      return;
+    }
     setPhase("submitting");
     try {
       const hash = await withdraw({
         worker: stream.worker,
         streamId: stream.id,
-        amount: resolved.amount,
+        amount,
         signXdr: (xdr) => wallet.signTransactionXdr(xdr),
       });
       setReceipts(
         addReceipt(stream.id, {
-          amountStroops: resolved.amount.toString(),
+          amountStroops: amount.toString(),
           hash,
           atMs: Date.now(),
         }),
       );
       setAmountInput("");
+      setConfirmAmount(null);
       onWithdrawn(); // reconcile the balance to the new on-chain withdrawn figure
     } catch (caught) {
       // A race (someone withdrew elsewhere) surfaces as a simulation/contract
@@ -84,11 +94,12 @@ export function WithdrawPanel({
       // figure corrects itself, rather than leaving a stale number.
       if (caught instanceof ChainError || caught instanceof SubmitError) {
         setError(
-          "That withdrawal did not go through, the amount may have changed. The balance has been refreshed, try again.",
+          "That cash-out did not go through, the amount may have changed. The balance has been refreshed, try again.",
         );
       } else {
         setError("Something went wrong. The balance has been refreshed.");
       }
+      setConfirmAmount(null);
       onWithdrawn();
     } finally {
       setPhase("idle");
@@ -98,7 +109,7 @@ export function WithdrawPanel({
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5">
       <div className="flex items-baseline justify-between">
-        <span className="text-sm text-slate-500">Available to withdraw</span>
+        <span className="text-sm text-slate-500">Ready to cash out</span>
         <span className="text-lg font-semibold text-slate-900 tabular-nums">
           {stroopsToXlm(available, { group: true })} XLM
         </span>
@@ -115,26 +126,17 @@ export function WithdrawPanel({
             }}
             disabled={phase === "submitting"}
             placeholder={`All (${stroopsToXlm(available)} XLM)`}
-            aria-label="Amount to withdraw in XLM"
+            aria-label="Amount to cash out in XLM"
             className="mt-4 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 tabular-nums focus:border-teal-500 focus:outline-none disabled:bg-slate-50"
           />
           <button
             type="button"
-            onClick={() => void submit()}
+            onClick={requestWithdraw}
             disabled={!canWithdraw}
             className="mt-3 w-full rounded-xl bg-teal-600 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-teal-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
           >
-            {phase === "submitting"
-              ? "Sending to your wallet..."
-              : amountInput.trim() === ""
-                ? "Withdraw all"
-                : "Withdraw"}
+            {amountInput.trim() === "" ? "Cash out all" : "Cash out"}
           </button>
-          {phase === "submitting" && (
-            <p className="mt-2 text-center text-xs text-slate-500">
-              Settling on Stellar, about 5 seconds.
-            </p>
-          )}
         </>
       ) : (
         <button
@@ -142,7 +144,7 @@ export function WithdrawPanel({
           disabled
           className="mt-4 w-full cursor-not-allowed rounded-xl bg-slate-200 py-3 text-center text-sm font-semibold text-slate-500"
         >
-          {cancelled ? "Stream cancelled" : "Withdraw"}
+          {cancelled ? "Paycheck stopped" : "Cash out"}
         </button>
       )}
 
@@ -154,15 +156,16 @@ export function WithdrawPanel({
 
       {!isOwner && !cancelled && (
         <p className="mt-3 text-xs text-slate-500">
-          This stream pays a different wallet. Open this link in the browser
-          that holds that wallet to withdraw. Anyone can watch the balance here.
+          This paycheck pays a different account. Open this link in the browser
+          that holds that account to cash out. Anyone can watch the balance
+          here.
         </p>
       )}
 
       {receipts.length > 0 && (
         <div className="mt-5 border-t border-slate-100 pt-4">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Withdrawals
+            Cash-outs
           </h3>
           <ul className="mt-2 space-y-2">
             {receipts.map((receipt) => (
@@ -186,6 +189,58 @@ export function WithdrawPanel({
             ))}
           </ul>
         </div>
+      )}
+
+      {confirmAmount !== null && (
+        <Dialog
+          title="Cash out"
+          onClose={
+            phase === "submitting"
+              ? () => undefined
+              : () => setConfirmAmount(null)
+          }
+          labelledBy="withdraw-confirm-title"
+        >
+          <p className="text-sm text-slate-600">
+            This moves the money to your account. The rest of your balance keeps
+            growing.
+          </p>
+          <dl className="mt-4 space-y-2 text-sm">
+            <div className="flex items-baseline justify-between">
+              <dt className="text-slate-500">Cashing out now</dt>
+              <dd className="text-lg font-semibold tabular-nums text-slate-900">
+                {stroopsToXlm(confirmAmount, { group: true })} XLM
+              </dd>
+            </div>
+            <div className="flex items-baseline justify-between">
+              <dt className="text-slate-500">Still available after</dt>
+              <dd className="tabular-nums text-slate-700">
+                {stroopsToXlm(available - confirmAmount, { group: true })} XLM
+              </dd>
+            </div>
+          </dl>
+          <p className="mt-2 text-xs text-slate-400">
+            Arrives in about 5 seconds for a tiny fee. You get a public receipt
+            you can open and verify yourself.
+          </p>
+          <div className="mt-5 flex gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => setConfirmAmount(null)}
+              disabled={phase === "submitting"}
+              className="flex-1"
+            >
+              Back
+            </Button>
+            <Button
+              onClick={() => void submit(confirmAmount)}
+              disabled={phase === "submitting"}
+              className="flex-1"
+            >
+              {phase === "submitting" ? "Sending..." : "Confirm cash-out"}
+            </Button>
+          </div>
+        </Dialog>
       )}
     </section>
   );

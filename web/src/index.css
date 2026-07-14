@@ -1,8 +1,29 @@
 @import "tailwindcss";
 
+/* Self-hosted variable font (no CDN, satisfies the offline/CSP rule): Manrope, a
+   geometric sans that reads as clean fintech and ships tabular figures so the
+   money screens stay column-stable. Bundled by Vite from node_modules. */
+@import "@fontsource-variable/manrope";
+
+/* Design tokens (Tailwind v4 @theme). One teal accent (decision 15: no gradients,
+   neutral surfaces, one accent), a custom display/body font, and a shared card
+   radius so every surface matches. Existing teal-* / slate-* utilities are
+   unchanged; these only add the font and a --radius-card token. */
+@theme {
+  --font-sans:
+    "Manrope Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, sans-serif;
+  --radius-card: 1rem;
+}
+
 /* Crisper text for the demo (the video may film a real phone): antialiased
-   glyphs improve legibility and contrast on the money screens (T-016). */
+   glyphs improve legibility and contrast on the money screens (T-016). Tabular
+   figures everywhere numbers tick so digits never shift width. */
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }

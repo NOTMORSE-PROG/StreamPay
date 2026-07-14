@@ -5,12 +5,20 @@ import {
   WalletAccessError,
   type WalletStatus,
 } from "../lib/wallet";
+import {
+  clearSignedOut,
+  isSignedOut,
+  markSignedOut,
+} from "../lib/employerSession";
 
 export interface UseWallet {
   status: WalletStatus;
   accessError: string | null;
   connect: () => Promise<void>;
   refresh: () => Promise<void>;
+  /** App-level sign-out: forces the sign-in gate until the user reconnects.
+   *  Freighter stays authorized (it has no revoke API), which the UI states. */
+  signOut: () => void;
 }
 
 /**
@@ -24,20 +32,34 @@ export function useWallet(): UseWallet {
   const [accessError, setAccessError] = useState<string | null>(null);
 
   const refresh = useCallback(async (): Promise<void> => {
+    // An app-level sign-out wins over whatever Freighter reports, so the gate
+    // holds even when the extension is still authorized (and across the
+    // window-focus re-resolve).
+    if (isSignedOut()) {
+      setStatus({ kind: "disconnected" });
+      return;
+    }
     setStatus(await resolveWalletStatus());
   }, []);
 
   const connect = useCallback(async (): Promise<void> => {
     setAccessError(null);
+    clearSignedOut();
     try {
       setStatus(await connectWallet());
     } catch (error) {
       setAccessError(
         error instanceof WalletAccessError
           ? "Connection was declined. Try again when you are ready."
-          : "Could not reach Freighter. Make sure it is unlocked, then retry.",
+          : "Could not reach your wallet app. Make sure it is unlocked, then retry.",
       );
     }
+  }, []);
+
+  const signOut = useCallback((): void => {
+    markSignedOut();
+    setAccessError(null);
+    setStatus({ kind: "disconnected" });
   }, []);
 
   useEffect(() => {
@@ -51,5 +73,5 @@ export function useWallet(): UseWallet {
     };
   }, [refresh]);
 
-  return { status, accessError, connect, refresh };
+  return { status, accessError, connect, refresh, signOut };
 }

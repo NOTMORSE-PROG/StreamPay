@@ -84,6 +84,45 @@ export function getReceipts(streamId: bigint): Receipt[] {
   }
 }
 
+export interface StreamReceipt {
+  /** The stream the receipt belongs to. */
+  streamId: bigint;
+  receipt: Receipt;
+}
+
+/**
+ * Every withdrawal receipt across all of this browser's streams, newest first,
+ * for the worker's Activity tab. Scans the `streampay:receipts:` keys, reuses the
+ * per-stream parser (so corrupt entries are dropped, not thrown), and sorts by
+ * timestamp descending.
+ */
+export function getAllReceipts(): StreamReceipt[] {
+  const all: StreamReceipt[] = [];
+  let keys: string[];
+  try {
+    keys = Object.keys(localStorage);
+  } catch {
+    return [];
+  }
+  for (const key of keys) {
+    if (!key.startsWith(RECEIPT_PREFIX)) {
+      continue;
+    }
+    const idText = key.slice(RECEIPT_PREFIX.length);
+    let streamId: bigint;
+    try {
+      streamId = BigInt(idText);
+    } catch {
+      continue; // a key we did not write; skip it
+    }
+    for (const receipt of getReceipts(streamId)) {
+      all.push({ streamId, receipt });
+    }
+  }
+  all.sort((a, b) => b.receipt.atMs - a.receipt.atMs);
+  return all;
+}
+
 /** Prepend a receipt for a stream and persist it; returns the updated list. */
 export function addReceipt(streamId: bigint, receipt: Receipt): Receipt[] {
   const next = [receipt, ...getReceipts(streamId)];

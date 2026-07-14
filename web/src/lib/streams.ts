@@ -64,22 +64,27 @@ export function fairSplit(deposit: bigint, earned: bigint): FairSplit {
 export interface StreamsSummary {
   activeCount: number;
   totalStreaming: bigint;
+  /** Sum of every stream's deposit, active or not (the payroll ever funded). */
+  totalDeposited: bigint;
 }
 
 /**
- * Dashboard header figures: how many streams are still active and the total
- * deposit currently in flight across them.
+ * Dashboard header figures: how many streams are still active, the total deposit
+ * currently in flight across active streams, and the total ever deposited across
+ * every stream (for the "total deposited" stat tile).
  */
 export function summarize(rows: StreamRow[]): StreamsSummary {
   let activeCount = 0;
   let totalStreaming = 0n;
+  let totalDeposited = 0n;
   for (const row of rows) {
+    totalDeposited += row.stream.deposit;
     if (row.state === "active") {
       activeCount += 1;
       totalStreaming += row.stream.deposit;
     }
   }
-  return { activeCount, totalStreaming };
+  return { activeCount, totalStreaming, totalDeposited };
 }
 
 const LABELS: Record<LifecycleState, string> = {
@@ -92,6 +97,53 @@ const LABELS: Record<LifecycleState, string> = {
 /** Human label for a lifecycle state badge. */
 export function lifecycleLabel(state: LifecycleState): string {
   return LABELS[state];
+}
+
+export type StatusFilter = "all" | "active" | "completed" | "cancelled";
+
+/**
+ * Whether a stream's lifecycle state matches a dashboard filter tab. "completed"
+ * groups the two finished-vesting states (completed and drained) so the tab count
+ * matches what an employer means by "done".
+ */
+export function matchesStatusFilter(
+  state: LifecycleState,
+  filter: StatusFilter,
+): boolean {
+  switch (filter) {
+    case "all":
+      return true;
+    case "active":
+      return state === "active";
+    case "completed":
+      return state === "completed" || state === "drained";
+    case "cancelled":
+      return state === "cancelled";
+  }
+}
+
+/**
+ * Case-insensitive search over a stream's id, its saved nickname, and its worker
+ * address, for the dashboard search box. An empty query matches everything.
+ */
+export function matchesSearch(
+  row: StreamRow,
+  query: string,
+  nickname: string | null,
+): boolean {
+  const q = query.trim().toLowerCase();
+  if (q === "") {
+    return true;
+  }
+  const haystack = [
+    `#${row.stream.id.toString()}`,
+    row.stream.id.toString(),
+    nickname ?? "",
+    row.stream.worker,
+  ]
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(q);
 }
 
 const NICKNAME_PREFIX = "streampay:nick:";
