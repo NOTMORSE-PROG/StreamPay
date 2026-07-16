@@ -7,7 +7,7 @@ import { WithdrawPanel } from "../../components/WithdrawPanel";
 import { ratePerSecond, withdrawableStroops } from "../../lib/accrual";
 import {
   formatDuration,
-  stroopsToXlm,
+  stroopsToXlmCompact,
   truncateAddress,
 } from "../../lib/format";
 import { explorerAccountUrl } from "../../lib/config";
@@ -143,7 +143,7 @@ function WorkerStreamCard({
         )}
         {ticking && rate > 0n && (
           <p className="mt-3 text-sm text-teal-700 tabular-nums">
-            +{stroopsToXlm(rate)} XLM per second
+            +{stroopsToXlmCompact(rate)} XLM per second
           </p>
         )}
         <EndStateNote
@@ -187,15 +187,14 @@ function EndStateNote({
   if (state === "active") {
     return null;
   }
-  const earned = stroopsToXlm(chainAccrued, { group: true });
+  const earned = stroopsToXlmCompact(chainAccrued);
   const text =
     state === "cancelled"
       ? `This paycheck was stopped. Your earned ${earned} XLM was paid to your account when it stopped.`
       : state === "drained"
         ? "Fully paid out. Nothing left to collect."
-        : `Finished. Your remaining ${stroopsToXlm(
+        : `Finished. Your remaining ${stroopsToXlmCompact(
             withdrawableStroops(stream, chainAccrued),
-            { group: true },
           )} XLM is still yours to cash out.`;
   return <p className="mt-4 text-sm text-slate-500">{text}</p>;
 }
@@ -205,8 +204,8 @@ function StreamMeta({ stream, rate }: { stream: Stream; rate: bigint }) {
     <dl className="grid grid-cols-2 gap-3 rounded-2xl border border-slate-200 bg-white p-5 text-sm">
       <div>
         <dt className="text-slate-500">Total for this paycheck</dt>
-        <dd className="mt-0.5 tabular-nums text-slate-900">
-          {stroopsToXlm(stream.deposit, { group: true })} XLM
+        <dd className="mt-0.5 break-words tabular-nums text-slate-900">
+          {stroopsToXlmCompact(stream.deposit)} XLM
         </dd>
       </div>
       <div>
@@ -217,14 +216,14 @@ function StreamMeta({ stream, rate }: { stream: Stream; rate: bigint }) {
       </div>
       <div>
         <dt className="text-slate-500">Rate</dt>
-        <dd className="mt-0.5 tabular-nums text-slate-900">
-          {stroopsToXlm(rate)} XLM/s
+        <dd className="mt-0.5 break-words tabular-nums text-slate-900">
+          {stroopsToXlmCompact(rate)} XLM/s
         </dd>
       </div>
       <div>
         <dt className="text-slate-500">Already cashed out</dt>
-        <dd className="mt-0.5 tabular-nums text-slate-900">
-          {stroopsToXlm(stream.withdrawn, { group: true })} XLM
+        <dd className="mt-0.5 break-words tabular-nums text-slate-900">
+          {stroopsToXlmCompact(stream.withdrawn)} XLM
         </dd>
       </div>
       <div>

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import { smoothedAccrued } from "../lib/accrual";
-import { stroopsToXlm } from "../lib/format";
+import { stroopsToXlmTicker } from "../lib/format";
 import type { Stream } from "../lib/contract";
 
 // The hero of the whole product: one big number, the worker's earned-and-
@@ -8,7 +8,9 @@ import type { Stream } from "../lib/contract";
 // owner low-end-phone gate): the tick writes text content ONLY, exactly one DOM
 // write per animation frame via requestAnimationFrame, no React state per frame
 // (a per-frame setState would re-render the tree), no layout-shifting effects.
-// The span keeps a fixed 7-decimal width (tabular numerals) so digits changing
+// The span keeps a stable width (tabular numerals, adaptive fraction width via
+// stroopsToXlmTicker: 7 decimals for small balances, fewer as the whole part
+// grows, so the number stays on one line on a phone, T-055) and digits changing
 // never nudge the layout. When the stream is no longer active, ticking stops and
 // the number holds at the on-chain figure (Completed/Drained/Cancelled).
 
@@ -47,7 +49,7 @@ export function TickingBalance({
             BigInt(Math.max(0, Date.now() - anchorMs)),
           )
         : chainAccrued;
-      node.textContent = stroopsToXlm(value, { fractionDigits: 7 });
+      node.textContent = stroopsToXlmTicker(value);
     };
 
     // Paint once synchronously so there is never an empty flash, then, only for

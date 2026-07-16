@@ -7,7 +7,7 @@ import {
   summarize,
   type StatusFilter,
 } from "../../lib/streams";
-import { stroopsToXlm } from "../../lib/format";
+import { stroopsToXlmCompact } from "../../lib/format";
 import {
   downloadCsv,
   EMPLOYER_EXPORT_HEADERS,
@@ -80,12 +80,14 @@ export function Dashboard() {
         />
         <Stat
           label="Streaming now"
-          value={`${stroopsToXlm(summary.totalStreaming, { group: true })} XLM`}
+          value={stroopsToXlmCompact(summary.totalStreaming)}
+          unit="XLM"
           hint="Money in flight across active streams"
         />
         <Stat
           label="Total deposited"
-          value={`${stroopsToXlm(summary.totalDeposited, { group: true })} XLM`}
+          value={stroopsToXlmCompact(summary.totalDeposited)}
+          unit="XLM"
           hint="Across every stream you have funded"
         />
       </div>

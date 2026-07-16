@@ -9,7 +9,7 @@ import {
   resolveWithdrawAmount,
   type Receipt,
 } from "../lib/withdraw";
-import { stroopsToXlm } from "../lib/format";
+import { stroopsToXlm, stroopsToXlmCompact } from "../lib/format";
 import { explorerTxUrl } from "../lib/config";
 import { Dialog } from "./ui/Dialog";
 import { Button } from "./ui/Button";
@@ -108,10 +108,10 @@ export function WithdrawPanel({
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5">
-      <div className="flex items-baseline justify-between">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-2">
         <span className="text-sm text-slate-500">Ready to cash out</span>
-        <span className="text-lg font-semibold text-slate-900 tabular-nums">
-          {stroopsToXlm(available, { group: true })} XLM
+        <span className="min-w-0 break-words text-lg font-semibold text-slate-900 tabular-nums">
+          {stroopsToXlmCompact(available)} XLM
         </span>
       </div>
 
@@ -125,7 +125,7 @@ export function WithdrawPanel({
               setError(null);
             }}
             disabled={phase === "submitting"}
-            placeholder={`All (${stroopsToXlm(available)} XLM)`}
+            placeholder={`All (${stroopsToXlmCompact(available)} XLM)`}
             aria-label="Amount to cash out in XLM"
             className="mt-4 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 tabular-nums focus:border-teal-500 focus:outline-none disabled:bg-slate-50"
           />

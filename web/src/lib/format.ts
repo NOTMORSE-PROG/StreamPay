@@ -32,12 +32,19 @@ export function xlmToStroops(input: string): bigint {
 /**
  * Format stroops as a decimal token string. By default trailing zeros are
  * trimmed for a compact reading ("8.666666"); pass a fixed `fractionDigits` for
- * a stable-width ticker (T-013) that never shifts layout as digits change.
- * `group` inserts thousands separators in the integer part for dashboards.
+ * a stable-width ticker (T-013) that never shifts layout as digits change, or
+ * `maxFractionDigits` for a summary-card figure that shows at most that many
+ * decimals (truncated, then trailing zeros trimmed) so a long fraction can
+ * never stretch a card (T-055). `group` inserts thousands separators in the
+ * integer part for dashboards.
  */
 export function stroopsToXlm(
   stroops: bigint,
-  options: { fractionDigits?: number; group?: boolean } = {},
+  options: {
+    fractionDigits?: number;
+    maxFractionDigits?: number;
+    group?: boolean;
+  } = {},
 ): string {
   const negative = stroops < 0n;
   const magnitude = negative ? -stroops : stroops;
@@ -46,10 +53,14 @@ export function stroopsToXlm(
 
   let fractionDigits = fractionPart.toString().padStart(TOKEN_DECIMALS, "0");
   if (options.fractionDigits === undefined) {
+    // Truncation, never rounding, in both compact paths: the display can never
+    // claim more than the on-chain figure (I-7).
+    if (options.maxFractionDigits !== undefined) {
+      fractionDigits = fractionDigits.slice(0, options.maxFractionDigits);
+    }
     fractionDigits = fractionDigits.replace(/0+$/, "");
   } else {
-    // Truncate or pad toward the requested width. Truncation (not rounding) keeps
-    // the display from ever claiming more than the on-chain figure (I-7).
+    // Truncate or pad toward the requested width for the stable-width ticker.
     fractionDigits = fractionDigits
       .slice(0, options.fractionDigits)
       .padEnd(options.fractionDigits, "0");
@@ -62,6 +73,45 @@ export function stroopsToXlm(
   return fractionDigits.length > 0
     ? `${sign}${wholeText}.${fractionDigits}`
     : `${sign}${wholeText}`;
+}
+
+/**
+ * The one human-reading money format (T-055): at most 2 decimals, truncated
+ * (never rounded up, I-7), grouped. Exact 7-decimal figures belong only at
+ * money-moving moments (confirmations, receipts, the create-form rate review)
+ * and the ticking hero. One guard: a dust amount that would compact to "0"
+ * while actually nonzero shows its exact value instead, so the display never
+ * reads as empty when money exists.
+ */
+export function stroopsToXlmCompact(stroops: bigint): string {
+  const compact = stroopsToXlm(stroops, { group: true, maxFractionDigits: 2 });
+  if (compact === "0" && stroops !== 0n) {
+    return stroopsToXlm(stroops, { group: true });
+  }
+  return compact;
+}
+
+// The ticking hero's character budget: whole digits + dot + fraction digits
+// (thousands separators ride along, they are visually thin). 9 keeps the
+// number on one line at text-5xl on a 320 px phone (T-055).
+const TICKER_CHAR_BUDGET = 9;
+
+/**
+ * Format stroops for the big ticking hero (T-013/T-055): grouped, truncated
+ * (I-7), with an adaptive fraction width. Small balances keep all 7 decimals
+ * (so a slow stream visibly ticks); as the whole part grows, fraction digits
+ * yield one for one, keeping the total width stable and the number on one
+ * line. The width only changes when the balance crosses a power of ten, so
+ * per-frame digit changes never nudge the layout.
+ */
+export function stroopsToXlmTicker(stroops: bigint): string {
+  const magnitude = stroops < 0n ? -stroops : stroops;
+  const wholeLength = (magnitude / STROOPS_PER_UNIT).toString().length;
+  const fractionDigits = Math.min(
+    TOKEN_DECIMALS,
+    Math.max(2, TICKER_CHAR_BUDGET - 1 - wholeLength),
+  );
+  return stroopsToXlm(stroops, { fractionDigits, group: true });
 }
 
 /** Insert thousands separators into a non-negative integer string. */

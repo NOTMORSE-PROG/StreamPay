@@ -5,7 +5,7 @@ import { useWorkerStreams } from "../../hooks/useWorkerStreams";
 import { getNickname, progressPercent } from "../../lib/streams";
 import type { StreamRow } from "../../lib/streams";
 import { withdrawableStroops } from "../../lib/accrual";
-import { stroopsToXlm } from "../../lib/format";
+import { stroopsToXlmCompact } from "../../lib/format";
 import { Card } from "../../components/ui/Card";
 import { Stat } from "../../components/ui/Stat";
 import { StatusBadge } from "../../components/ui/StatusBadge";
@@ -105,7 +105,8 @@ export function WorkerHome() {
       <div className="grid grid-cols-2 gap-3">
         <Stat
           label="Available now"
-          value={hiddenOr(stroopsToXlm(available, { group: true }), hidden)}
+          value={hiddenOr(stroopsToXlmCompact(available), hidden)}
+          unit="XLM"
           hint={
             hidden
               ? "Hidden"
@@ -117,7 +118,8 @@ export function WorkerHome() {
         />
         <Stat
           label="Earned so far"
-          value={hiddenOr(stroopsToXlm(earned, { group: true }), hidden)}
+          value={hiddenOr(stroopsToXlmCompact(earned), hidden)}
+          unit="XLM"
           hint={
             hidden
               ? "Hidden"
@@ -296,12 +298,12 @@ function StreamRowCard({ row, hidden }: { row: StreamRow; hidden: boolean }) {
         </div>
         <StatusBadge state={state} context="worker" />
       </div>
-      <div className="mt-3 flex items-baseline justify-between">
-        <span className="text-2xl font-semibold tabular-nums text-slate-900">
-          {hiddenOr(stroopsToXlm(available, { group: true }), hidden)}
+      <div className="mt-3 flex items-baseline justify-between gap-2">
+        <span className="min-w-0 break-words text-2xl font-semibold tabular-nums text-slate-900">
+          {hiddenOr(stroopsToXlmCompact(available), hidden)}
           <span className="ml-1 text-sm font-medium text-slate-400">XLM</span>
         </span>
-        <span className="text-xs text-slate-400">available</span>
+        <span className="shrink-0 text-xs text-slate-400">available</span>
       </div>
       <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
         <div

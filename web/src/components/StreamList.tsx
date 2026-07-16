@@ -2,7 +2,12 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { getNickname, progressPercent, setNickname } from "../lib/streams";
 import type { StreamRow } from "../lib/streams";
-import { formatDuration, stroopsToXlm, truncateAddress } from "../lib/format";
+import {
+  formatDuration,
+  stroopsToXlm,
+  stroopsToXlmCompact,
+  truncateAddress,
+} from "../lib/format";
 import {
   CONTRACT_ID,
   explorerAccountUrl,
@@ -118,8 +123,8 @@ function StreamCard({
         </div>
         <div>
           <dt className="text-slate-500">Set aside</dt>
-          <dd className="mt-0.5 tabular-nums text-slate-900">
-            {stroopsToXlm(stream.deposit, { group: true })} XLM
+          <dd className="mt-0.5 break-words tabular-nums text-slate-900">
+            {stroopsToXlmCompact(stream.deposit)} XLM
           </dd>
         </div>
         <div>
@@ -130,8 +135,8 @@ function StreamCard({
         </div>
         <div>
           <dt className="text-slate-500">Earned so far</dt>
-          <dd className="mt-0.5 font-semibold tabular-nums text-slate-900">
-            {stroopsToXlm(accrued, { group: true })} XLM
+          <dd className="mt-0.5 break-words font-semibold tabular-nums text-slate-900">
+            {stroopsToXlmCompact(accrued)} XLM
           </dd>
         </div>
       </dl>

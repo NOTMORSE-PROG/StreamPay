@@ -75,15 +75,18 @@ describe("Dashboard", () => {
     ]);
     // 1 active stream; 10 XLM streaming (only the active one); 12 XLM deposited.
     // Scope each figure to its stat tile so it does not collide with the card
-    // that shows the same deposit.
+    // that shows the same deposit. The unit renders as its own small span
+    // beside the figure (T-055), so the number is matched on its own.
     const streamingTile = screen
       .getByText("Streaming now")
       .closest("div") as HTMLElement;
-    expect(within(streamingTile).getByText("10 XLM")).toBeInTheDocument();
+    expect(within(streamingTile).getByText("10")).toBeInTheDocument();
+    expect(within(streamingTile).getByText("XLM")).toBeInTheDocument();
     const depositedTile = screen
       .getByText("Total deposited")
       .closest("div") as HTMLElement;
-    expect(within(depositedTile).getByText("12 XLM")).toBeInTheDocument();
+    expect(within(depositedTile).getByText("12")).toBeInTheDocument();
+    expect(within(depositedTile).getByText("XLM")).toBeInTheDocument();
   });
 
   it("links to the create-stream route", () => {
