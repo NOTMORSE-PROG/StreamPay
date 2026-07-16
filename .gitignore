@@ -22,3 +22,5 @@ web/.vite/
 .DS_Store
 Thumbs.db
 *.swp
+
+.vercel
