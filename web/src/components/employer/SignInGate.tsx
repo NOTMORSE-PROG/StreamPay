@@ -5,9 +5,9 @@ import type { UseWallet } from "../../hooks/useWallet";
 
 // The employer sign-in page shown until a Stellar wallet is connected. The wallet
 // IS the account (no email or password, nothing stored on a server), so this
-// presents Freighter connect as a proper sign-in and explains why. It reuses the
-// unchanged WalletConnect so every connection state (not installed, wrong network,
-// declined) is handled with a guided fix.
+// presents Freighter connect as a proper sign-in and explains why. It reuses
+// WalletConnect (centered here via its align prop, T-056) so every connection
+// state (not installed, wrong network, declined) is handled with a guided fix.
 
 export function SignInGate({ wallet }: { wallet: UseWallet }) {
   return (
@@ -36,6 +36,7 @@ export function SignInGate({ wallet }: { wallet: UseWallet }) {
             status={wallet.status}
             accessError={wallet.accessError}
             onConnect={() => void wallet.connect()}
+            align="center"
           />
           <p className="text-xs text-slate-400">
             New to wallet apps? Install Freighter, switch it to the Test

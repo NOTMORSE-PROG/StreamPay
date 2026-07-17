@@ -5,12 +5,15 @@ import type { WalletStatus } from "../lib/wallet";
 // Presentational wallet control: renders every connection state (checking, not
 // installed, wrong network, disconnected, connected) from props. The state
 // machine lives in useWallet; this component only draws it and reports intent.
+// `align` matches the mount: "end" for the header's right edge (the default),
+// "center" for the centered sign-in card (T-056).
 
 interface WalletConnectProps {
   status: WalletStatus;
   accessError: string | null;
   onConnect: () => void;
   onSignOut?: () => void;
+  align?: "end" | "center";
 }
 
 const FREIGHTER_INSTALL_URL = "https://www.freighter.app/";
@@ -23,10 +26,13 @@ export function WalletConnect({
   accessError,
   onConnect,
   onSignOut,
+  align = "end",
 }: WalletConnectProps) {
+  const alignClass =
+    align === "center" ? "items-center text-center" : "items-end";
   return (
-    <div className="flex flex-col items-end gap-1">
-      {renderStatus(status, onConnect, onSignOut)}
+    <div className={`flex flex-col gap-1 ${alignClass}`}>
+      {renderStatus(status, alignClass, onConnect, onSignOut)}
       {accessError !== null && (
         <p className="text-xs text-amber-700">{accessError}</p>
       )}
@@ -36,6 +42,7 @@ export function WalletConnect({
 
 function renderStatus(
   status: WalletStatus,
+  alignClass: string,
   onConnect: () => void,
   onSignOut?: () => void,
 ): React.ReactNode {
@@ -61,7 +68,7 @@ function renderStatus(
 
     case "wrong-network":
       return (
-        <div className="flex flex-col items-end gap-1">
+        <div className={`flex flex-col gap-1 ${alignClass}`}>
           <button type="button" onClick={onConnect} className={buttonClass}>
             Retry
           </button>
