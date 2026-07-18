@@ -16,7 +16,11 @@ import {
   perSecondStroops,
   validateCreateStreamInputs,
 } from "../lib/validation";
-import { stroopsToXlm, truncateAddress, xlmToStroops } from "../lib/format";
+import {
+  stroopsToXlmCompact,
+  truncateAddress,
+  xlmToStroops,
+} from "../lib/format";
 import { explorerTxUrl, friendbotUrl } from "../lib/config";
 import {
   getSavedWorkers,
@@ -181,7 +185,7 @@ export function CreateStreamForm({
         setPhase("error");
         setNeedsFunding(true);
         setSubmitError(
-          `Your balance (${stroopsToXlm(balance)} XLM) is less than the amount you are setting aside.`,
+          `Your balance (${stroopsToXlmCompact(balance)} XLM) is less than the amount you are setting aside.`,
         );
         return;
       }
@@ -387,7 +391,7 @@ export function CreateStreamForm({
             />
             <ReviewRow
               label="Total set aside"
-              value={`${stroopsToXlm(pending.deposit, { group: true })} XLM`}
+              value={`${stroopsToXlmCompact(pending.deposit)} XLM`}
             />
             <ReviewRow
               label="Duration"
@@ -406,7 +410,7 @@ export function CreateStreamForm({
             {balanceAfter !== null && (
               <ReviewRow
                 label="Your balance after"
-                value={`${stroopsToXlm(balanceAfter, { group: true })} XLM`}
+                value={`${stroopsToXlmCompact(balanceAfter)} XLM`}
               />
             )}
           </dl>
@@ -608,10 +612,13 @@ function computeRatePreview(
   if (deposit <= 0n) {
     return null;
   }
+  // Compact reading for humans (T-055): the underlying rate is still the
+  // contract's exact floor(deposit / duration), computed by perSecondStroops
+  // and unit-tested there; the display trims it to what a person can parse.
   const perSecond = perSecondStroops(deposit, BigInt(durationSeconds));
   return {
-    perSecond: stroopsToXlm(perSecond, { fractionDigits: 7 }),
-    perDay: stroopsToXlm(perSecond * 86_400n, { group: true }),
+    perSecond: stroopsToXlmCompact(perSecond),
+    perDay: stroopsToXlmCompact(perSecond * 86_400n),
   };
 }
 

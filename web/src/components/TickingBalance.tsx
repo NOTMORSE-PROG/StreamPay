@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import { smoothedAccrued } from "../lib/accrual";
-import { stroopsToXlmTicker } from "../lib/format";
+import { stroopsToXlmCompact, stroopsToXlmTicker } from "../lib/format";
 import type { Stream } from "../lib/contract";
 
 // The hero of the whole product: one big number, the worker's earned-and-
@@ -41,15 +41,20 @@ export function TickingBalance({
       return;
     }
 
+    // Ticking uses the stable-width ticker format (fixed, zero-padded fraction
+    // so per-frame digit changes never nudge layout). A frozen stream
+    // (completed/cancelled/drained) shows the plain compact figure instead:
+    // "100", not "100.00000" (T-055 owner follow-up).
     const paint = (): void => {
-      const value = ticking
-        ? smoothedAccrued(
-            stream,
-            anchorLedgerSeconds,
-            BigInt(Math.max(0, Date.now() - anchorMs)),
+      node.textContent = ticking
+        ? stroopsToXlmTicker(
+            smoothedAccrued(
+              stream,
+              anchorLedgerSeconds,
+              BigInt(Math.max(0, Date.now() - anchorMs)),
+            ),
           )
-        : chainAccrued;
-      node.textContent = stroopsToXlmTicker(value);
+        : stroopsToXlmCompact(chainAccrued);
     };
 
     // Paint once synchronously so there is never an empty flash, then, only for

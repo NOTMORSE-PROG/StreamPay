@@ -8,7 +8,7 @@ import {
 } from "../lib/contract";
 import { signWithFreighter, SignError } from "../lib/wallet";
 import { fairSplit } from "../lib/streams";
-import { stroopsToXlm } from "../lib/format";
+import { stroopsToXlmCompact } from "../lib/format";
 import { explorerTxUrl } from "../lib/config";
 import { Dialog } from "./ui/Dialog";
 
@@ -176,7 +176,7 @@ function SplitRow({ label, amount }: { label: string; amount: bigint }) {
     <div className="flex items-baseline justify-between">
       <dt className="text-slate-500">{label}</dt>
       <dd className="font-semibold tabular-nums text-slate-900">
-        {stroopsToXlm(amount, { group: true })} XLM
+        {stroopsToXlmCompact(amount)} XLM
       </dd>
     </div>
   );

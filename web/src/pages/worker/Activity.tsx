@@ -1,6 +1,6 @@
 import { getNickname } from "../../lib/streams";
 import { getAllReceipts } from "../../lib/withdraw";
-import { stroopsToXlm } from "../../lib/format";
+import { stroopsToXlmCompact } from "../../lib/format";
 import { explorerTxUrl } from "../../lib/config";
 import {
   ACTIVITY_EXPORT_HEADERS,
@@ -90,10 +90,7 @@ export function Activity() {
               >
                 <div className="min-w-0">
                   <p className="font-semibold tabular-nums text-slate-900">
-                    {stroopsToXlm(BigInt(receipt.amountStroops), {
-                      group: true,
-                    })}{" "}
-                    XLM
+                    {stroopsToXlmCompact(BigInt(receipt.amountStroops))} XLM
                   </p>
                   <p className="truncate text-xs text-slate-400">
                     {label} · {relativeTime(receipt.atMs)}

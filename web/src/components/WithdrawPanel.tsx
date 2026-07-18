@@ -9,7 +9,7 @@ import {
   resolveWithdrawAmount,
   type Receipt,
 } from "../lib/withdraw";
-import { stroopsToXlm, stroopsToXlmCompact } from "../lib/format";
+import { stroopsToXlmCompact } from "../lib/format";
 import { explorerTxUrl } from "../lib/config";
 import { Dialog } from "./ui/Dialog";
 import { Button } from "./ui/Button";
@@ -174,8 +174,7 @@ export function WithdrawPanel({
                 className="flex items-center justify-between text-sm"
               >
                 <span className="tabular-nums text-slate-700">
-                  {stroopsToXlm(BigInt(receipt.amountStroops), { group: true })}{" "}
-                  XLM
+                  {stroopsToXlmCompact(BigInt(receipt.amountStroops))} XLM
                 </span>
                 <a
                   href={explorerTxUrl(receipt.hash)}
@@ -209,13 +208,13 @@ export function WithdrawPanel({
             <div className="flex items-baseline justify-between">
               <dt className="text-slate-500">Cashing out now</dt>
               <dd className="text-lg font-semibold tabular-nums text-slate-900">
-                {stroopsToXlm(confirmAmount, { group: true })} XLM
+                {stroopsToXlmCompact(confirmAmount)} XLM
               </dd>
             </div>
             <div className="flex items-baseline justify-between">
               <dt className="text-slate-500">Still available after</dt>
               <dd className="tabular-nums text-slate-700">
-                {stroopsToXlm(available - confirmAmount, { group: true })} XLM
+                {stroopsToXlmCompact(available - confirmAmount)} XLM
               </dd>
             </div>
           </dl>

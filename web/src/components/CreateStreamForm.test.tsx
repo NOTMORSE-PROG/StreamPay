@@ -69,14 +69,15 @@ describe("CreateStreamForm", () => {
     });
   });
 
-  it("shows the live per-second rate matching the contract floor math", () => {
+  it("shows the live per-second rate derived from the contract floor math", () => {
     renderForm();
     // 100 test-XLM over the default 10 minutes (600 s): floor(1e9 / 600) = 1,666,666
-    // stroops per second = 0.1666666 XLM (matches the contract's 1-second accrual).
+    // stroops per second = 0.1666666 XLM exactly (perSecondStroops, unit-tested in
+    // accrual.test.ts); the preview shows the compact human reading (T-055).
     fireEvent.change(screen.getByLabelText("Total amount (test-XLM)"), {
       target: { value: "100" },
     });
-    expect(screen.getByText(/0\.1666666 XLM \/ second/)).toBeInTheDocument();
+    expect(screen.getByText(/0\.16 XLM \/ second/)).toBeInTheDocument();
   });
 
   it("blocks a malformed worker address before any network call", () => {
